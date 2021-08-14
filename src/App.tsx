@@ -1,10 +1,16 @@
 import React, { useCallback, useEffect, useRef } from "react";
 import "./App.css";
 
+interface Point {
+  x: number;
+  y: number;
+}
+
 function App() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const currentFrameRef = useRef<number>(0);
   const previousFrameRef = useRef<number>(0);
+  const distanceRef = useRef<number>(0);
 
   // Draw stuff
   const renderGame = useCallback(() => {
@@ -15,8 +21,15 @@ function App() {
 
     const { width, height } = context.canvas;
 
+    // Background
     context.fillStyle = "#222222";
     context.fillRect(0, 0, width, height);
+
+    // Player
+    const player = new Path2D();
+    player.arc(width / 3, height / 2, 10, 0, 2 * Math.PI);
+    context.fillStyle = "#4444aa";
+    context.fill(player);
   }, []);
 
   const animationFrame = useCallback(
