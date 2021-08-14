@@ -1,5 +1,5 @@
-import React, {useCallback, useEffect, useRef} from 'react';
-import './App.css';
+import React, { useCallback, useEffect, useRef } from "react";
+import "./App.css";
 
 function App() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -15,7 +15,7 @@ function App() {
 
     const { width, height } = context.canvas;
 
-    context.fillStyle = '#222222';
+    context.fillStyle = "#222222";
     context.fillRect(0, 0, width, height);
   }, []);
 
@@ -32,7 +32,7 @@ function App() {
     [renderGame]
   );
 
-  // Being rendering
+  // Begin rendering
   useEffect(() => {
     currentFrameRef.current = requestAnimationFrame(animationFrame);
 
@@ -43,8 +43,7 @@ function App() {
 
   return (
     <div className="container">
-      <canvas width={850} height={600} className="game" ref={canvasRef}>
-      </canvas>
+      <canvas width={850} height={600} className="game" ref={canvasRef} />
     </div>
   );
 }
