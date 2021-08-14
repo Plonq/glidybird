@@ -28,8 +28,9 @@ function App() {
   const distanceRef = useRef<number>(0);
 
   function createWall() {
-    const randHeight = (prevHeight: number) => {
-      let height = random(prevHeight - 8, prevHeight + 9);
+    const randHeight = (prev: number, prev2: number) => {
+      const vector = prev - prev2;
+      let height = random(prev - 8, prev + 9) + vector / 10;
       if (height < 0) {
         height = 0;
       }
@@ -37,10 +38,12 @@ function App() {
     };
 
     let previous = ceilingWalls.current[ceilingWalls.current.length - 1] || 0;
-    ceilingWalls.current.push(randHeight(previous));
+    let previous2 = ceilingWalls.current[ceilingWalls.current.length - 2] || 0;
+    ceilingWalls.current.push(randHeight(previous, previous2));
 
     previous = floorWalls.current[floorWalls.current.length - 1] || 0;
-    floorWalls.current.push(randHeight(previous));
+    previous2 = floorWalls.current[floorWalls.current.length - 2] || 0;
+    floorWalls.current.push(randHeight(previous, previous2));
   }
 
   const resetGame = useCallback(() => {
