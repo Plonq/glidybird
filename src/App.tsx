@@ -78,10 +78,12 @@ function App() {
       playerYRef.current += playerVectorRef.current;
 
       // Collision detection
-      const wallAtPlayer = ceilingWalls.current[PLAYER_WALL_INDEX];
+      const floorWallAtPlayer = floorWalls.current[PLAYER_WALL_INDEX];
+      const ceilingWallAtPlayer = ceilingWalls.current[PLAYER_WALL_INDEX];
       const playerHitFloor =
-        playerYRef.current + PLAYER_SIZE > height - wallAtPlayer;
-      const playerHitCeiling = playerYRef.current - PLAYER_SIZE < wallAtPlayer;
+        playerYRef.current + PLAYER_SIZE > height - floorWallAtPlayer;
+      const playerHitCeiling =
+        playerYRef.current - PLAYER_SIZE < ceilingWallAtPlayer;
       if (playerHitFloor || playerHitCeiling) {
         gameStateRef.current = "over";
       }
