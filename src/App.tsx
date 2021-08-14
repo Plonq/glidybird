@@ -10,7 +10,7 @@ function App() {
   const CANVAS_WIDTH = 900;
   const CANVAS_HEIGHT = 600;
   const PLAYER_SIZE = 5;
-  const WALL_COUNT = 300;
+  const WALL_COUNT = 100;
   const PLAYER_X = CANVAS_WIDTH / 3;
   const PLAYER_WALL_INDEX = Math.floor(WALL_COUNT / (CANVAS_WIDTH / PLAYER_X));
 
@@ -27,19 +27,19 @@ function App() {
   const floorWalls = useRef<number[]>([]);
 
   function createWall() {
+    const randHeight = (prevHeight: number) => {
+      let height = random(prevHeight - 2, prevHeight + 2) + 0.5;
+      if (height < 0) {
+        height = 0;
+      }
+      return height;
+    };
+
     let previous = ceilingWalls.current[ceilingWalls.current.length - 1] || 0;
-    let height = random(previous - 2, previous + 2) + 0.5;
-    if (height < 0) {
-      height = 0;
-    }
-    ceilingWalls.current.push(height);
+    ceilingWalls.current.push(randHeight(previous));
 
     previous = floorWalls.current[floorWalls.current.length - 1] || 0;
-    height = random(previous - 2, previous + 2) + 0.5;
-    if (height < 0) {
-      height = 0;
-    }
-    floorWalls.current.push(height);
+    floorWalls.current.push(randHeight(previous));
   }
 
   const resetGame = useCallback(() => {
@@ -47,6 +47,7 @@ function App() {
     playerVectorRef.current = 0.0;
 
     ceilingWalls.current = [];
+    floorWalls.current = [];
     for (let i = 0; i < WALL_COUNT; i++) {
       createWall();
     }
