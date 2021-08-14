@@ -25,6 +25,7 @@ function App() {
   const vectorChangeRef = useRef<number>(Date.now());
   const ceilingWalls = useRef<number[]>([]);
   const floorWalls = useRef<number[]>([]);
+  const distanceRef = useRef<number>(0);
 
   function createWall() {
     const randHeight = (prevHeight: number) => {
@@ -43,6 +44,7 @@ function App() {
   }
 
   const resetGame = useCallback(() => {
+    distanceRef.current = 0;
     playerYRef.current = CANVAS_HEIGHT / 2;
     playerVectorRef.current = 0.0;
 
@@ -64,6 +66,9 @@ function App() {
     const { height } = context.canvas;
 
     if (gameStateRef.current === "play") {
+      // Score
+      distanceRef.current = distanceRef.current += 1;
+
       // Move to the right
       createWall();
       ceilingWalls.current.shift();
@@ -123,6 +128,12 @@ function App() {
       context.fillStyle = "white";
       context.font = "bold 72px Arial";
       context.fillText("Game Over", width / 2 - 190, height / 2);
+      context.font = "bold 36px Arial";
+      context.fillText(
+        `Score: ${distanceRef.current}`,
+        width / 2 - 50 - distanceRef.current.toString().length * 10,
+        height / 2 + 50
+      );
       context.font = "bold 24px Arial";
       context.fillText(
         "Press Space to start again",
@@ -156,6 +167,11 @@ function App() {
       context.arc(PLAYER_X, playerYRef.current, PLAYER_SIZE, 0, 2 * Math.PI);
       context.closePath();
       context.fill();
+
+      // Score
+      context.fillStyle = "white";
+      context.font = "bold 16px Arial";
+      context.fillText(`Score: ${distanceRef.current}`, 10, 26);
       return;
     }
   }, [PLAYER_X]);
