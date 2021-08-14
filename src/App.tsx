@@ -23,20 +23,36 @@ function App() {
   const playerYRef = useRef<number>(CANVAS_HEIGHT / 2);
   const playerVectorRef = useRef<number>(0.0);
   const vectorChangeRef = useRef<number>(Date.now());
-  const wallsRef = useRef<number[]>([]);
+  const ceilingWalls = useRef<number[]>([]);
+  const floorWalls = useRef<number[]>([]);
 
   function createWall() {
-    const previous = wallsRef.current[wallsRef.current.length - 1] || 0;
+    let previous = ceilingWalls.current[ceilingWalls.current.length - 1] || 0;
     let height = random(previous - 2, previous + 2) + 0.5;
     if (height < 0) {
       height = 0;
     }
-    return height;
+    ceilingWalls.current.push(height);
+
+    previous = floorWalls.current[floorWalls.current.length - 1] || 0;
+    height = random(previous - 2, previous + 2) + 0.5;
+    if (height < 0) {
+      height = 0;
+    }
+    floorWalls.current.push(height);
   }
 
-  for (let i = 0; i < WALL_COUNT; i++) {
-    wallsRef.current.push(createWall());
+  function resetGame() {
+    playerYRef.current = CANVAS_HEIGHT / 2;
+    playerVectorRef.current = 0.0;
+
+    ceilingWalls.current = [];
+    for (let i = 0; i < WALL_COUNT; i++) {
+      createWall();
+    }
   }
+
+  resetGame();
 
   const gameLogic = useCallback(() => {
     const context = canvasRef.current?.getContext("2d");
@@ -48,6 +64,9 @@ function App() {
 
     if (gameStateRef.current === "play") {
       // Move to the right
+      createWall();
+      ceilingWalls.current.shift();
+      floorWalls.current.shift();
 
       // Player gravity
       const timeDelta = (Date.now() - vectorChangeRef.current) / 1000;
@@ -59,7 +78,7 @@ function App() {
       playerYRef.current += playerVectorRef.current;
 
       // Collision detection
-      const wallAtPlayer = wallsRef.current[PLAYER_WALL_INDEX];
+      const wallAtPlayer = ceilingWalls.current[PLAYER_WALL_INDEX];
       const playerHitFloor =
         playerYRef.current + PLAYER_SIZE > height - wallAtPlayer;
       const playerHitCeiling = playerYRef.current - PLAYER_SIZE < wallAtPlayer;
@@ -115,12 +134,14 @@ function App() {
       context.fillStyle = "#222222";
       context.fillRect(0, 0, width, height);
 
-      // Floor
+      // Ceiling/Floor
       context.beginPath();
       context.fillStyle = "#44aaaa";
       const wallWidth = width / WALL_COUNT;
-      for (let [index, wall] of wallsRef.current.entries()) {
+      for (let [index, wall] of ceilingWalls.current.entries()) {
         context.rect(index * wallWidth, 0, wallWidth, wall);
+      }
+      for (let [index, wall] of floorWalls.current.entries()) {
         context.rect(index * wallWidth, height - wall, wallWidth, wall);
       }
       context.fill();
@@ -166,8 +187,7 @@ function App() {
     const keyDownHandler = (event: KeyboardEvent) => {
       if (event.code === "Space") {
         if (gameStateRef.current === "new" || gameStateRef.current === "over") {
-          playerYRef.current = 300;
-          playerVectorRef.current = 0.0;
+          resetGame();
           gameStateRef.current = "play";
         }
 
