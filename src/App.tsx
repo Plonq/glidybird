@@ -12,6 +12,7 @@ function App() {
   const playerYRef = useRef<number>(300);
   const playerVectorRef = useRef<number>(0.0);
   const vectorChangeRef = useRef<number>(Date.now());
+  const wallHeightRef = useRef<number>(5);
 
   const PLAYER_SIZE = 5;
 
@@ -37,8 +38,10 @@ function App() {
       playerYRef.current += playerVectorRef.current;
 
       // Collision detection
-      const playerHitFloor = playerYRef.current + PLAYER_SIZE > height;
-      const playerHitCeiling = playerYRef.current - PLAYER_SIZE < 0;
+      const playerHitFloor =
+        playerYRef.current + PLAYER_SIZE > height - wallHeightRef.current;
+      const playerHitCeiling =
+        playerYRef.current - PLAYER_SIZE < wallHeightRef.current;
       if (playerHitFloor || playerHitCeiling) {
         gameStateRef.current = "over";
       }
@@ -94,8 +97,8 @@ function App() {
       // Scenery
       context.beginPath();
       context.fillStyle = "#44aaaa";
-      context.rect(0, height - 100, width, 100);
-      context.rect(0, 0, width, 100);
+      context.rect(0, height - wallHeightRef.current, width, 100);
+      context.rect(0, 0, width, wallHeightRef.current);
       context.fill();
       context.closePath();
 
