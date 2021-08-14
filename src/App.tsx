@@ -1,16 +1,19 @@
 import React, { useCallback, useEffect, useRef } from "react";
 import "./App.css";
 
-interface Point {
-  x: number;
-  y: number;
-}
-
 function App() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const currentFrameRef = useRef<number>(0);
   const previousFrameRef = useRef<number>(0);
+
+  const gameStateRef = useRef<"new" | "play" | "over">("new");
   const distanceRef = useRef<number>(0);
+  const isSpaceDown = useRef<boolean>(false);
+  const playerYRef = useRef<number>(300);
+  const playerVectorRef = useRef<number>(0.0);
+  const vectorChangeRef = useRef<number>(Date.now());
+
+  /* RENDERING */
 
   // Draw stuff
   const renderGame = useCallback(() => {
@@ -21,20 +24,86 @@ function App() {
 
     const { width, height } = context.canvas;
 
-    // Background
-    context.fillStyle = "#222222";
-    context.fillRect(0, 0, width, height);
+    if (gameStateRef.current === "new") {
+      context.fillStyle = "#222222";
+      context.fillRect(0, 0, width, height);
 
-    // Player
-    const player = new Path2D();
-    player.arc(width / 3, height / 2, 10, 0, 2 * Math.PI);
-    context.fillStyle = "#4444aa";
-    context.fill(player);
+      context.fillStyle = "white";
+      context.font = "bold 72px Arial";
+      context.fillText("Glidy Bird", width / 2 - 190, height / 2);
+      context.font = "bold 24px Arial";
+      context.fillText(
+        "Press Space to start",
+        width / 2 - 130,
+        height / 2 + 100
+      );
+      return;
+    }
+
+    if (gameStateRef.current === "over") {
+      context.fillStyle = "#222222";
+      context.fillRect(0, 0, width, height);
+
+      context.fillStyle = "white";
+      context.font = "bold 72px Arial";
+      context.fillText("Game Over", width / 2 - 190, height / 2);
+      context.font = "bold 24px Arial";
+      context.fillText(
+        "Press Space to start again",
+        width / 2 - 145,
+        height / 2 + 100
+      );
+      return;
+    }
+
+    if (gameStateRef.current === "play") {
+      const timeDelta = (Date.now() - vectorChangeRef.current) / 1000;
+      const playerSize = 5;
+
+      console.log(
+        "distance:",
+        distanceRef.current,
+        "playerY:",
+        playerYRef.current,
+        "delta:",
+        timeDelta
+      );
+
+      // Game Logic
+      distanceRef.current += 1;
+      if (isSpaceDown.current) {
+        playerVectorRef.current -= timeDelta;
+      } else {
+        playerVectorRef.current += timeDelta;
+      }
+      playerYRef.current += playerVectorRef.current;
+
+      const playerHitFloor = playerYRef.current + playerSize > height;
+      const playerHitCeiling = playerYRef.current - playerSize < 0;
+      if (playerHitFloor || playerHitCeiling) {
+        gameStateRef.current = "over";
+      }
+
+      // Background
+      context.fillStyle = "#222222";
+      context.fillRect(0, 0, width, height);
+
+      // Player
+      const x = width / 3;
+      context.fillStyle = "#4444aa";
+      context.beginPath();
+      context.arc(x, playerYRef.current, playerSize, 0, 2 * Math.PI);
+      context.closePath();
+      context.fill();
+      return;
+    }
   }, []);
 
   const animationFrame = useCallback(
     (time: number) => {
       const frameDelta = time - previousFrameRef.current;
+
+      // Render frame
       if (frameDelta >= 1000 / 60) {
         renderGame();
         previousFrameRef.current = time;
@@ -53,6 +122,38 @@ function App() {
       cancelAnimationFrame(currentFrameRef.current);
     };
   }, [animationFrame]);
+
+  /* GAME LOGIC */
+
+  // Space bar handlers
+  useEffect(() => {
+    const keyDownHandler = (event: KeyboardEvent) => {
+      if (event.code === "Space") {
+        if (gameStateRef.current === "new" || gameStateRef.current === "over") {
+          playerYRef.current = 300;
+          playerVectorRef.current = 0.0;
+          gameStateRef.current = "play";
+        }
+
+        if (!isSpaceDown.current) {
+          isSpaceDown.current = true;
+          vectorChangeRef.current = Date.now();
+        }
+      }
+    };
+    window.addEventListener("keydown", keyDownHandler);
+
+    const keyUpHandler = () => {
+      isSpaceDown.current = false;
+      vectorChangeRef.current = Date.now();
+    };
+    window.addEventListener("keyup", keyUpHandler);
+
+    return () => {
+      window.removeEventListener("keydown", keyDownHandler);
+      window.removeEventListener("keyup", keyUpHandler);
+    };
+  }, []);
 
   return (
     <div className="container">
