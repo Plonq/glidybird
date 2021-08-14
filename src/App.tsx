@@ -1,7 +1,21 @@
 import React, { useCallback, useEffect, useRef } from "react";
 import "./App.css";
 
+function random(min: number, max: number) {
+  // min and max included
+  return min + Math.random() * (max - min);
+}
+
 function App() {
+  const CANVAS_WIDTH = 900;
+  const CANVAS_HEIGHT = 600;
+  const PLAYER_SIZE = 5;
+  const WALL_COUNT = 300;
+  const PLAYER_X = CANVAS_WIDTH / 3;
+  const PLAYER_WALL_INDEX = Math.floor(
+    WALL_COUNT - WALL_COUNT / (CANVAS_WIDTH / PLAYER_X)
+  );
+
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const currentFrameRef = useRef<number>(0);
   const previousFrameRef = useRef<number>(0);
@@ -9,13 +23,24 @@ function App() {
   const gameStateRef = useRef<"new" | "play" | "over">("play");
   const distanceRef = useRef<number>(0);
   const isSpaceDown = useRef<boolean>(false);
-  const playerYRef = useRef<number>(300);
+  const playerYRef = useRef<number>(CANVAS_HEIGHT / 2);
   const playerVectorRef = useRef<number>(0.0);
   const vectorChangeRef = useRef<number>(Date.now());
   const wallHeightRef = useRef<number>(5);
+  const wallsRef = useRef<number[]>([]);
 
-  const PLAYER_SIZE = 5;
+  function createWall(previous: number) {
+    let height = random(previous - 2, previous + 2) + 0.5;
+    if (height < 0) {
+      height = 0;
+    }
+    return height;
+  }
 
+  for (let i = 0; i < WALL_COUNT; i++) {
+    const previous = wallsRef.current[0] || 0;
+    wallsRef.current.unshift(createWall(previous));
+  }
   const gameLogic = useCallback(() => {
     const context = canvasRef.current?.getContext("2d");
     if (!context) {
@@ -26,7 +51,7 @@ function App() {
 
     if (gameStateRef.current === "play") {
       // Move to the right
-      distanceRef.current += 1;
+      // distanceRef.current += 1;
 
       // Player gravity
       const timeDelta = (Date.now() - vectorChangeRef.current) / 1000;
@@ -38,15 +63,15 @@ function App() {
       playerYRef.current += playerVectorRef.current;
 
       // Collision detection
+      const wallAtPlayer = wallsRef.current[PLAYER_WALL_INDEX];
       const playerHitFloor =
-        playerYRef.current + PLAYER_SIZE > height - wallHeightRef.current;
-      const playerHitCeiling =
-        playerYRef.current - PLAYER_SIZE < wallHeightRef.current;
+        playerYRef.current + PLAYER_SIZE > height - wallAtPlayer;
+      const playerHitCeiling = playerYRef.current - PLAYER_SIZE < wallAtPlayer;
       if (playerHitFloor || playerHitCeiling) {
         gameStateRef.current = "over";
       }
     }
-  }, []);
+  }, [PLAYER_WALL_INDEX]);
 
   // Draw stuff
   const renderGame = useCallback(() => {
@@ -94,19 +119,21 @@ function App() {
       context.fillStyle = "#222222";
       context.fillRect(0, 0, width, height);
 
-      // Scenery
+      // Floor
       context.beginPath();
       context.fillStyle = "#44aaaa";
-      context.rect(0, height - wallHeightRef.current, width, 100);
-      context.rect(0, 0, width, wallHeightRef.current);
+      const wallWidth = width / WALL_COUNT;
+      for (let [index, wall] of wallsRef.current.entries()) {
+        context.rect(width - index * wallWidth, 0, wallWidth, wall);
+        context.rect(width - index * wallWidth, height - wall, wallWidth, wall);
+      }
       context.fill();
       context.closePath();
 
       // Player
-      const x = width / 3;
       context.fillStyle = "#4444aa";
       context.beginPath();
-      context.arc(x, playerYRef.current, PLAYER_SIZE, 0, 2 * Math.PI);
+      context.arc(PLAYER_X, playerYRef.current, PLAYER_SIZE, 0, 2 * Math.PI);
       context.closePath();
       context.fill();
       return;
@@ -170,7 +197,12 @@ function App() {
 
   return (
     <div className="container">
-      <canvas width={850} height={600} className="game" ref={canvasRef} />
+      <canvas
+        width={CANVAS_WIDTH}
+        height={CANVAS_HEIGHT}
+        className="game"
+        ref={canvasRef}
+      />
     </div>
   );
 }
