@@ -6,14 +6,44 @@ function App() {
   const currentFrameRef = useRef<number>(0);
   const previousFrameRef = useRef<number>(0);
 
-  const gameStateRef = useRef<"new" | "play" | "over">("new");
+  const gameStateRef = useRef<"new" | "play" | "over">("play");
   const distanceRef = useRef<number>(0);
   const isSpaceDown = useRef<boolean>(false);
   const playerYRef = useRef<number>(300);
   const playerVectorRef = useRef<number>(0.0);
   const vectorChangeRef = useRef<number>(Date.now());
 
-  /* RENDERING */
+  const PLAYER_SIZE = 5;
+
+  const gameLogic = useCallback(() => {
+    const context = canvasRef.current?.getContext("2d");
+    if (!context) {
+      return;
+    }
+
+    const { width, height } = context.canvas;
+
+    if (gameStateRef.current === "play") {
+      // Move to the right
+      distanceRef.current += 1;
+
+      // Player gravity
+      const timeDelta = (Date.now() - vectorChangeRef.current) / 1000;
+      if (isSpaceDown.current) {
+        playerVectorRef.current -= timeDelta;
+      } else {
+        playerVectorRef.current += timeDelta;
+      }
+      playerYRef.current += playerVectorRef.current;
+
+      // Collision detection
+      const playerHitFloor = playerYRef.current + PLAYER_SIZE > height;
+      const playerHitCeiling = playerYRef.current - PLAYER_SIZE < 0;
+      if (playerHitFloor || playerHitCeiling) {
+        gameStateRef.current = "over";
+      }
+    }
+  }, []);
 
   // Draw stuff
   const renderGame = useCallback(() => {
@@ -57,42 +87,23 @@ function App() {
     }
 
     if (gameStateRef.current === "play") {
-      const timeDelta = (Date.now() - vectorChangeRef.current) / 1000;
-      const playerSize = 5;
-
-      console.log(
-        "distance:",
-        distanceRef.current,
-        "playerY:",
-        playerYRef.current,
-        "delta:",
-        timeDelta
-      );
-
-      // Game Logic
-      distanceRef.current += 1;
-      if (isSpaceDown.current) {
-        playerVectorRef.current -= timeDelta;
-      } else {
-        playerVectorRef.current += timeDelta;
-      }
-      playerYRef.current += playerVectorRef.current;
-
-      const playerHitFloor = playerYRef.current + playerSize > height;
-      const playerHitCeiling = playerYRef.current - playerSize < 0;
-      if (playerHitFloor || playerHitCeiling) {
-        gameStateRef.current = "over";
-      }
-
       // Background
       context.fillStyle = "#222222";
       context.fillRect(0, 0, width, height);
+
+      // Scenery
+      context.beginPath();
+      context.fillStyle = "#44aaaa";
+      context.rect(0, height - 100, width, 100);
+      context.rect(0, 0, width, 100);
+      context.fill();
+      context.closePath();
 
       // Player
       const x = width / 3;
       context.fillStyle = "#4444aa";
       context.beginPath();
-      context.arc(x, playerYRef.current, playerSize, 0, 2 * Math.PI);
+      context.arc(x, playerYRef.current, PLAYER_SIZE, 0, 2 * Math.PI);
       context.closePath();
       context.fill();
       return;
@@ -105,6 +116,7 @@ function App() {
 
       // Render frame
       if (frameDelta >= 1000 / 60) {
+        gameLogic();
         renderGame();
         previousFrameRef.current = time;
       }
@@ -122,8 +134,6 @@ function App() {
       cancelAnimationFrame(currentFrameRef.current);
     };
   }, [animationFrame]);
-
-  /* GAME LOGIC */
 
   // Space bar handlers
   useEffect(() => {
