@@ -12,24 +12,21 @@ function App() {
   const PLAYER_SIZE = 5;
   const WALL_COUNT = 300;
   const PLAYER_X = CANVAS_WIDTH / 3;
-  const PLAYER_WALL_INDEX = Math.floor(
-    WALL_COUNT - WALL_COUNT / (CANVAS_WIDTH / PLAYER_X)
-  );
+  const PLAYER_WALL_INDEX = Math.floor(WALL_COUNT / (CANVAS_WIDTH / PLAYER_X));
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const currentFrameRef = useRef<number>(0);
   const previousFrameRef = useRef<number>(0);
 
   const gameStateRef = useRef<"new" | "play" | "over">("play");
-  const distanceRef = useRef<number>(0);
   const isSpaceDown = useRef<boolean>(false);
   const playerYRef = useRef<number>(CANVAS_HEIGHT / 2);
   const playerVectorRef = useRef<number>(0.0);
   const vectorChangeRef = useRef<number>(Date.now());
-  const wallHeightRef = useRef<number>(5);
   const wallsRef = useRef<number[]>([]);
 
-  function createWall(previous: number) {
+  function createWall() {
+    const previous = wallsRef.current[wallsRef.current.length - 1] || 0;
     let height = random(previous - 2, previous + 2) + 0.5;
     if (height < 0) {
       height = 0;
@@ -38,9 +35,9 @@ function App() {
   }
 
   for (let i = 0; i < WALL_COUNT; i++) {
-    const previous = wallsRef.current[0] || 0;
-    wallsRef.current.unshift(createWall(previous));
+    wallsRef.current.push(createWall());
   }
+
   const gameLogic = useCallback(() => {
     const context = canvasRef.current?.getContext("2d");
     if (!context) {
@@ -51,7 +48,6 @@ function App() {
 
     if (gameStateRef.current === "play") {
       // Move to the right
-      // distanceRef.current += 1;
 
       // Player gravity
       const timeDelta = (Date.now() - vectorChangeRef.current) / 1000;
@@ -124,8 +120,8 @@ function App() {
       context.fillStyle = "#44aaaa";
       const wallWidth = width / WALL_COUNT;
       for (let [index, wall] of wallsRef.current.entries()) {
-        context.rect(width - index * wallWidth, 0, wallWidth, wall);
-        context.rect(width - index * wallWidth, height - wall, wallWidth, wall);
+        context.rect(index * wallWidth, 0, wallWidth, wall);
+        context.rect(index * wallWidth, height - wall, wallWidth, wall);
       }
       context.fill();
       context.closePath();
