@@ -28,7 +28,7 @@ function App() {
 
   function createWall() {
     const randHeight = (prevHeight: number) => {
-      let height = random(prevHeight - 2, prevHeight + 2) + 0.5;
+      let height = random(prevHeight - 8, prevHeight + 9);
       if (height < 0) {
         height = 0;
       }
