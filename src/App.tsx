@@ -42,7 +42,7 @@ function App() {
     floorWalls.current.push(height);
   }
 
-  function resetGame() {
+  const resetGame = useCallback(() => {
     playerYRef.current = CANVAS_HEIGHT / 2;
     playerVectorRef.current = 0.0;
 
@@ -50,7 +50,7 @@ function App() {
     for (let i = 0; i < WALL_COUNT; i++) {
       createWall();
     }
-  }
+  }, []);
 
   resetGame();
 
@@ -60,7 +60,7 @@ function App() {
       return;
     }
 
-    const { width, height } = context.canvas;
+    const { height } = context.canvas;
 
     if (gameStateRef.current === "play") {
       // Move to the right
@@ -155,7 +155,7 @@ function App() {
       context.fill();
       return;
     }
-  }, []);
+  }, [PLAYER_X]);
 
   const animationFrame = useCallback(
     (time: number) => {
@@ -170,7 +170,7 @@ function App() {
 
       currentFrameRef.current = requestAnimationFrame(animationFrame);
     },
-    [renderGame]
+    [gameLogic, renderGame]
   );
 
   // Begin rendering
@@ -209,7 +209,7 @@ function App() {
       window.removeEventListener("keydown", keyDownHandler);
       window.removeEventListener("keyup", keyUpHandler);
     };
-  }, []);
+  }, [resetGame]);
 
   return (
     <div className="container">
